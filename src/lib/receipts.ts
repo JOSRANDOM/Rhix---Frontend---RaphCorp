@@ -8,6 +8,7 @@ export interface Receipt {
   fechaEmision: string;
   montoNeto: number;
   retencion?: number;
+  hasPdf: boolean;
   status: ReceiptStatus;
   errorMessage?: string;
   emailMessageId: string;
@@ -37,9 +38,14 @@ export function getReceiptXMLUrl(id: number): string {
   return `${API_URL}/api/receipts/${id}/xml`;
 }
 
+export function getReceiptPDFUrl(id: number): string {
+  return `${API_URL}/api/receipts/${id}/pdf`;
+}
+
 export interface ReceiptEmailAttachment {
   id: number;
   serieNumero: string;
+  hasPdf: boolean;
 }
 
 export interface ReceiptEmail {

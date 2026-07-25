@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, ChevronRight, Eye, File, Folder } from "lucide-react";
-import { getReceipts, getReceiptXMLUrl, type Receipt } from "@/lib/receipts";
+import { ChevronDown, ChevronRight, Eye, File, FileText, Folder } from "lucide-react";
+import { getReceipts, getReceiptPDFUrl, getReceiptXMLUrl, type Receipt } from "@/lib/receipts";
 import { XMLPreviewModal } from "@/components/XMLPreviewModal";
+import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 
 const folderDateFormatter = new Intl.DateTimeFormat("es-PE", {
   day: "2-digit",
@@ -53,6 +54,11 @@ export function FilesPanel() {
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+
+  const [pdfPreview, setPdfPreview] = useState<{ id: number; title: string } | null>(null);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [pdfPreviewLoading, setPdfPreviewLoading] = useState(false);
+  const [pdfPreviewError, setPdfPreviewError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -113,6 +119,32 @@ export function FilesPanel() {
     setPreview(null);
   }
 
+  async function openPdfPreview(receipt: Receipt) {
+    setPdfPreview({ id: receipt.id, title: `${receipt.serieNumero}.pdf` });
+    setPdfPreviewUrl(null);
+    setPdfPreviewError(null);
+    setPdfPreviewLoading(true);
+
+    try {
+      const res = await fetch(getReceiptPDFUrl(receipt.id));
+      if (!res.ok) {
+        throw new Error(`Error ${res.status} al obtener el PDF`);
+      }
+      const blob = await res.blob();
+      setPdfPreviewUrl(URL.createObjectURL(blob));
+    } catch (err: unknown) {
+      setPdfPreviewError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPdfPreviewLoading(false);
+    }
+  }
+
+  function closePdfPreview() {
+    if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+    setPdfPreview(null);
+    setPdfPreviewUrl(null);
+  }
+
   return (
     <div>
       <div className="mb-4">
@@ -166,33 +198,57 @@ export function FilesPanel() {
                 {isOpen && (
                   <ul className="divide-y divide-neutral-800 border-t border-neutral-800">
                     {group.receipts.map((receipt) => (
-                      <li
-                        key={receipt.id}
-                        className="flex items-center justify-between px-4 py-2 pl-11"
-                      >
-                        <span className="flex items-center gap-2 text-sm text-neutral-300">
-                          <File size={15} className="shrink-0 text-neutral-500" />
-                          {receipt.serieNumero}.xml
-                          <span className="text-neutral-500">
-                            — {receipt.razonSocial}
+                      <li key={receipt.id} className="flex flex-col gap-1 px-4 py-2 pl-11">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2 text-sm text-neutral-300">
+                            <File size={15} className="shrink-0 text-neutral-500" />
+                            {receipt.serieNumero}.xml
+                            <span className="text-neutral-500">
+                              — {receipt.razonSocial}
+                            </span>
                           </span>
-                        </span>
-                        <span className="flex items-center gap-4">
-                          <button
-                            type="button"
-                            onClick={() => openPreview(receipt)}
-                            className="flex items-center gap-1 text-sm font-medium text-neutral-400 hover:text-neutral-200"
-                          >
-                            <Eye size={15} />
-                            Vista previa
-                          </button>
-                          <a
-                            href={getReceiptXMLUrl(receipt.id)}
-                            className="text-sm font-medium text-emerald-400 hover:text-emerald-300"
-                          >
-                            Descargar
-                          </a>
-                        </span>
+                          <span className="flex items-center gap-4">
+                            <button
+                              type="button"
+                              onClick={() => openPreview(receipt)}
+                              className="flex items-center gap-1 text-sm font-medium text-neutral-400 hover:text-neutral-200"
+                            >
+                              <Eye size={15} />
+                              Vista previa
+                            </button>
+                            <a
+                              href={getReceiptXMLUrl(receipt.id)}
+                              className="text-sm font-medium text-emerald-400 hover:text-emerald-300"
+                            >
+                              Descargar
+                            </a>
+                          </span>
+                        </div>
+
+                        {receipt.hasPdf && (
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-2 text-sm text-neutral-300">
+                              <FileText size={15} className="shrink-0 text-neutral-500" />
+                              {receipt.serieNumero}.pdf
+                            </span>
+                            <span className="flex items-center gap-4">
+                              <button
+                                type="button"
+                                onClick={() => openPdfPreview(receipt)}
+                                className="flex items-center gap-1 text-sm font-medium text-neutral-400 hover:text-neutral-200"
+                              >
+                                <Eye size={15} />
+                                Vista previa
+                              </button>
+                              <a
+                                href={getReceiptPDFUrl(receipt.id)}
+                                className="text-sm font-medium text-emerald-400 hover:text-emerald-300"
+                              >
+                                Descargar
+                              </a>
+                            </span>
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -210,6 +266,16 @@ export function FilesPanel() {
           loading={previewLoading}
           error={previewError}
           onClose={closePreview}
+        />
+      )}
+
+      {pdfPreview && (
+        <PDFPreviewModal
+          title={pdfPreview.title}
+          url={pdfPreviewUrl}
+          loading={pdfPreviewLoading}
+          error={pdfPreviewError}
+          onClose={closePdfPreview}
         />
       )}
     </div>
