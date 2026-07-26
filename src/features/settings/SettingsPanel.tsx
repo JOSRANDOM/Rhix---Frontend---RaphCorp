@@ -24,7 +24,7 @@ function Placeholder({
   description: string;
 }) {
   return (
-    <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-neutral-800 bg-neutral-900/50 p-8">
+    <div className="flex h-full flex-col items-start gap-3 rounded-lg border border-dashed border-neutral-800 bg-neutral-900/50 p-8">
       <Icon size={28} strokeWidth={1.5} className="text-neutral-500" />
       <h2 className="text-base font-semibold text-neutral-200">{title}</h2>
       <p className="text-sm text-neutral-500">{description}</p>
@@ -36,13 +36,13 @@ export function SettingsPanel() {
   const [tab, setTab] = useState<SettingsView>("user");
 
   return (
-    <div>
-      <div className="mb-4">
+    <div className="flex h-full flex-col">
+      <div className="mb-4 shrink-0">
         <h1 className="text-lg font-semibold text-white">Configuración</h1>
         <p className="text-sm text-neutral-400">Ajustes de la plataforma</p>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex flex-1 gap-6">
         <nav className="flex w-48 shrink-0 flex-col gap-1 rounded-lg border border-neutral-800 bg-neutral-900 p-2">
           {tabs.map(({ key, label, icon: Icon }) => {
             const isActive = tab === key;
