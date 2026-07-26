@@ -1,4 +1,4 @@
-import { BarChart3, FileText, Inbox } from "lucide-react";
+import { BarChart3, FileText, Inbox, Receipt } from "lucide-react";
 
 export type View = "inbox" | "files" | "reports";
 
@@ -22,9 +22,12 @@ interface SidebarProps {
 export function Sidebar({ active, onChange }: SidebarProps) {
   return (
     <aside className="group flex w-16 shrink-0 flex-col overflow-hidden border-r border-neutral-800 bg-neutral-900 transition-[width] duration-200 ease-in-out hover:w-60">
-      <div className="flex h-14 shrink-0 items-center px-4">
-        <span className="text-lg font-semibold whitespace-nowrap text-white opacity-0 transition-opacity delay-75 duration-150 group-hover:opacity-100">
-          Rhix
+      <div className="flex h-14 shrink-0 items-center gap-2.5 px-4">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-sm shadow-emerald-950/50">
+          <Receipt size={18} strokeWidth={2} className="text-neutral-950" />
+        </span>
+        <span className="text-lg font-semibold tracking-tight whitespace-nowrap text-white opacity-0 transition-opacity delay-75 duration-150 group-hover:opacity-100">
+          Rh<span className="text-emerald-400">ix</span>
         </span>
       </div>
 
