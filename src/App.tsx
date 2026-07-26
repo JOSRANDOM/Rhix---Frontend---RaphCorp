@@ -3,6 +3,7 @@ import { Sidebar, type View } from "@/components/Sidebar";
 import { ReceiptsPanel } from "@/features/receipts/ReceiptsPanel";
 import { FilesPanel } from "@/features/files/FilesPanel";
 import { ReportsPanel } from "@/features/reports/ReportsPanel";
+import { SettingsPanel } from "@/features/settings/SettingsPanel";
 
 function App() {
   const [view, setView] = useState<View>("inbox");
@@ -17,6 +18,8 @@ function App() {
         {view === "files" && <FilesPanel />}
 
         {view === "reports" && <ReportsPanel />}
+
+        {view === "settings" && <SettingsPanel />}
       </main>
     </div>
   );

@@ -1,6 +1,6 @@
-import { BarChart3, FileText, Inbox, Receipt } from "lucide-react";
+import { BarChart3, FileText, Inbox, Receipt, Settings } from "lucide-react";
 
-export type View = "inbox" | "files" | "reports";
+export type View = "inbox" | "files" | "reports" | "settings";
 
 interface NavItem {
   key: View;
@@ -14,9 +14,44 @@ const items: NavItem[] = [
   { key: "reports", label: "Reportes", icon: BarChart3 },
 ];
 
+const bottomItems: NavItem[] = [
+  { key: "settings", label: "Configuración", icon: Settings },
+];
+
 interface SidebarProps {
   active: View;
   onChange: (view: View) => void;
+}
+
+function NavButton({
+  item,
+  active,
+  onChange,
+}: {
+  item: NavItem;
+  active: View;
+  onChange: (view: View) => void;
+}) {
+  const { key, label, icon: Icon } = item;
+  const isActive = active === key;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(key)}
+      title={label}
+      className={`flex items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
+        isActive
+          ? "bg-emerald-600/15 text-emerald-400"
+          : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
+      }`}
+    >
+      <Icon size={18} strokeWidth={1.75} className="shrink-0" />
+      <span className="whitespace-nowrap opacity-0 transition-opacity delay-75 duration-150 group-hover:opacity-100">
+        {label}
+      </span>
+    </button>
+  );
 }
 
 export function Sidebar({ active, onChange }: SidebarProps) {
@@ -31,28 +66,16 @@ export function Sidebar({ active, onChange }: SidebarProps) {
         </span>
       </div>
 
-      <nav className="flex flex-col gap-1 px-2">
-        {items.map(({ key, label, icon: Icon }) => {
-          const isActive = active === key;
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onChange(key)}
-              title={label}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-emerald-600/15 text-emerald-400"
-                  : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
-              }`}
-            >
-              <Icon size={18} strokeWidth={1.75} className="shrink-0" />
-              <span className="whitespace-nowrap opacity-0 transition-opacity delay-75 duration-150 group-hover:opacity-100">
-                {label}
-              </span>
-            </button>
-          );
-        })}
+      <nav className="flex flex-1 flex-col gap-1 px-2">
+        {items.map((item) => (
+          <NavButton key={item.key} item={item} active={active} onChange={onChange} />
+        ))}
+      </nav>
+
+      <nav className="flex flex-col gap-1 border-t border-neutral-800 px-2 py-2">
+        {bottomItems.map((item) => (
+          <NavButton key={item.key} item={item} active={active} onChange={onChange} />
+        ))}
       </nav>
     </aside>
   );
