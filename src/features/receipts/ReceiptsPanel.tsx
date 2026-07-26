@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import {
   getReceipts,
   getReceiptEmail,
@@ -35,6 +36,7 @@ const statusClassName: Record<ReceiptStatus, string> = {
 export function ReceiptsPanel() {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -42,26 +44,23 @@ export function ReceiptsPanel() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadReceipts = useCallback(async (isRefresh: boolean) => {
+    if (isRefresh) setRefreshing(true);
+    setError(null);
 
-    getReceipts()
-      .then((data) => {
-        if (!cancelled) setReceipts(data);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    try {
+      setReceipts(await getReceipts());
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      if (isRefresh) setRefreshing(false);
+      else setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadReceipts(false);
+  }, [loadReceipts]);
 
   async function openEmail(receipt: Receipt) {
     setSelectedId(receipt.id);
@@ -84,11 +83,23 @@ export function ReceiptsPanel() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h1 className="text-lg font-semibold text-white">Bandeja de entrada</h1>
-        <p className="text-sm text-neutral-400">
-          Recibos por Honorarios procesados
-        </p>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-white">Bandeja de entrada</h1>
+          <p className="text-sm text-neutral-400">
+            Recibos por Honorarios procesados
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => loadReceipts(true)}
+          disabled={loading || refreshing}
+          className="flex items-center gap-2 rounded-md border border-neutral-700 px-3 py-2 text-sm font-medium text-neutral-300 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
+          Actualizar
+        </button>
       </div>
 
       {loading && <p className="text-neutral-400">Cargando recibos...</p>}

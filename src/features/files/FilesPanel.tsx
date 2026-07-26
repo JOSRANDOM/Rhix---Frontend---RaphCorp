@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ChevronDown, ChevronRight, Eye, File, FileText, Folder } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { ChevronDown, ChevronRight, Eye, File, FileText, Folder, RefreshCw } from "lucide-react";
 import { getReceipts, getReceiptPDFUrl, getReceiptXMLUrl, type Receipt } from "@/lib/receipts";
 import { XMLPreviewModal } from "@/components/XMLPreviewModal";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
@@ -47,6 +47,7 @@ function groupByReceivedDate(receipts: Receipt[]): FolderGroup[] {
 export function FilesPanel() {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set());
 
@@ -60,27 +61,30 @@ export function FilesPanel() {
   const [pdfPreviewLoading, setPdfPreviewLoading] = useState(false);
   const [pdfPreviewError, setPdfPreviewError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadReceipts = useCallback(async (isRefresh: boolean) => {
+    if (isRefresh) setRefreshing(true);
+    setError(null);
 
-    getReceipts()
-      .then((data) => {
-        if (cancelled) return;
-        setReceipts(data);
+    try {
+      const data = await getReceipts();
+      setReceipts(data);
+      // Solo abrimos la carpeta más reciente en la carga inicial — en un
+      // refresh manual respetamos lo que el usuario ya haya expandido/cerrado.
+      if (!isRefresh) {
         const groups = groupByReceivedDate(data);
         if (groups.length > 0) setOpenFolders(new Set([groups[0].key]));
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      if (isRefresh) setRefreshing(false);
+      else setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadReceipts(false);
+  }, [loadReceipts]);
 
   const groups = groupByReceivedDate(receipts);
 
@@ -147,11 +151,23 @@ export function FilesPanel() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h1 className="text-lg font-semibold text-white">Archivos</h1>
-        <p className="text-sm text-neutral-400">
-          XML originales recibidos, agrupados por fecha
-        </p>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-white">Archivos</h1>
+          <p className="text-sm text-neutral-400">
+            XML originales recibidos, agrupados por fecha
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => loadReceipts(true)}
+          disabled={loading || refreshing}
+          className="flex items-center gap-2 rounded-md border border-neutral-700 px-3 py-2 text-sm font-medium text-neutral-300 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
+          Actualizar
+        </button>
       </div>
 
       {loading && <p className="text-neutral-400">Cargando archivos...</p>}
